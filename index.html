@@ -378,6 +378,7 @@ const SVG = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8a2 2 0 0 0-3-3L5 16z"/></svg>',
   del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
   group: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 19c.4-3.6 3.1-5.6 6.5-5.6s6.1 2 6.5 5.6z"/><circle cx="17" cy="9" r="2.6" opacity=".75"/><path d="M15.8 13.7c2.9-.3 5.3 1.4 5.7 4.8h-4.3c-.2-1.9-.7-3.4-1.4-4.8z" opacity=".75"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
   sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
   moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
   auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>'
@@ -665,7 +666,7 @@ function msgHtml(m, prev) {
   const tick = mine && !m.deleted ? '<span class="tk' + (otherRead(m) ? ' read' : '') + '">' + (otherRead(m) ? ' &#10003;&#10003;' : ' &#10003;') + '</span>' : '';
   const meta = '<span class="meta">' + (m.edited_at && !m.deleted ? 'bewerkt · ' : '') + fmtTime(m.created_at) + tick + '</span>';
   const canEdit = mine && !m.deleted && m.kind !== 'file', canDel = !m.deleted && (mine || isAdmin(m.chat_id));
-  const acts = m.deleted ? '' : '<div class="acts"><button data-act="reply" title="Antwoorden">' + SVG.reply + '</button>' + (canEdit ? '<button data-act="edit" title="Bewerken">' + SVG.edit + '</button>' : '') + (canDel ? '<button data-act="del" title="Verwijderen">' + SVG.del + '</button>' : '') + '</div>';
+  const acts = m.deleted ? '' : '<div class="acts"><button data-act="reply" title="Antwoorden">' + SVG.reply + '</button>' + (m.kind === 'text' ? '<button data-act="copy" title="Kopi&euml;ren">' + SVG.copy + '</button>' : '') + (canEdit ? '<button data-act="edit" title="Bewerken">' + SVG.edit + '</button>' : '') + (canDel ? '<button data-act="del" title="Verwijderen">' + SVG.del + '</button>' : '') + '</div>';
   return '<div class="row' + (mine ? ' mine' : '') + (cont ? ' cont' : ' first') + '" data-m="' + m.id + '">' + (grp ? avatar(m.user_id, 'sm') : '') + '<div class="bub' + (m.deleted ? ' del' : '') + '">' + inner + meta + '</div>' + acts + '</div>';
 }
 function fsize(b) { return b < 1024 ? b + ' B' : b < 1048576 ? Math.round(b / 1024) + ' KB' : (b / 1048576).toFixed(1).replace('.', ',') + ' MB'; }
@@ -777,6 +778,7 @@ function renderMsgs(toBottom) {
   if (toBottom === 'keep') box.scrollTop = box.scrollHeight - oldH + oldTop;
   else if (toBottom || atBottom) box.scrollTop = box.scrollHeight;
 }
+$('msgs').addEventListener('dblclick', e => { const row = e.target.closest('.row'); if (!row || e.target.closest('a,img,.acts')) return; const m = (msgs[cur] || []).find(x => x.id === row.dataset.m); if (!m || m.deleted) return; window.getSelection().removeAllRanges(); replyTo = m.id; editId = null; renderReply(); $('text').focus(); });
 $('msgs').addEventListener('click', async e => {
   if (e.target.id === 'loadMore') { const id = cur, first = (msgs[id] || [])[0]; e.target.textContent = 'Laden...'; await loadMsgs(id, first && first.created_at); if (cur === id) renderMsgs('keep'); return; }
   const v = e.target.closest('[data-view]'); if (v) { const d = document.createElement('div'); d.className = 'viewer'; d.innerHTML = '<img src="' + esc(v.dataset.view) + '" alt="">'; d.onclick = () => d.remove(); document.body.append(d); return; }
@@ -785,6 +787,7 @@ $('msgs').addEventListener('click', async e => {
   const m = (msgs[cur] || []).find(x => x.id === row.dataset.m); if (!m) return;
   const a = e.target.closest('[data-act]');
   if (!a) { if (matchMedia('(hover: none)').matches) { $('msgs').querySelectorAll('.row.touch').forEach(r => r !== row && r.classList.remove('touch')); row.classList.toggle('touch'); } return; }
+  if (a.dataset.act === 'copy') { try { await navigator.clipboard.writeText(m.body); toast('Gekopieerd'); } catch (x) { toast('Kopiëren lukte niet'); } return; }
   if (a.dataset.act === 'reply') { replyTo = m.id; editId = null; renderReply(); $('text').focus(); }
   if (a.dataset.act === 'edit') { editId = m.id; replyTo = null; $('text').value = m.body; autosize(); renderReply(); $('text').focus(); }
   if (a.dataset.act === 'del') {
