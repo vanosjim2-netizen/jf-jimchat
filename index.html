@@ -39,6 +39,9 @@ a{color:var(--acc)}
 .av.sm{width:30px;height:30px;font-size:12px}
 .av.lg{width:56px;height:56px;font-size:21px}
 .av.grp svg{width:58%;height:58%}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.av.lg{cursor:default}
+.phbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .av .dot{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:#40c057;border:2px solid var(--panel)}
 .av.sm .dot{width:10px;height:10px}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--text);color:var(--panel);padding:10px 16px;border-radius:10px;font-size:14px;z-index:300;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
@@ -312,6 +315,7 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
             <button class="icon" id="emojiBtn" title="Emoji">&#128512;</button>
             <button class="icon" id="fileBtn" title="Bestand of foto sturen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg></button>
             <input type="file" id="fileIn" multiple hidden>
+            <input type="file" id="photoIn" accept="image/*" hidden>
             <textarea id="text" rows="1" maxlength="4000" placeholder="Typ een bericht"></textarea>
             <button id="send" title="Versturen" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
           </div>
@@ -376,7 +380,7 @@ function colorOf(id) { let h = 0; for (const c of String(id)) h = (h * 31 + c.ch
 function nameOf(id) { const p = profiles[id]; if (!p) return 'Onbekend'; if (p.name) return p.name; const e = p.username || (p.email || '').split('@')[0]; return e ? e[0].toUpperCase() + e.slice(1) : 'Onbekend'; }
 function handleOf(id) { const p = profiles[id] || {}, e = p.email || ''; if (p.username) return '@' + p.username; if (e.endsWith(USER_DOMAIN)) return '@' + e.slice(0, -USER_DOMAIN.length); return e; }
 function avatar(id, cls, dot) { const n = nameOf(id); return '<span class="av ' + (cls || '') + '" style="background:' + colorOf(id) + '">' + esc((n[0] || '?').toUpperCase()) + (dot && online.has(id) ? '<i class="dot"></i>' : '') + '</span>'; }
-function groupAv(c, cls) { return '<span class="av grp ' + (cls || '') + '" style="background:' + colorOf(c.id) + '">' + SVG.group + '</span>'; }
+function groupAv(c, cls) { return '<span class="av grp ' + (cls || '') + '" style="background:' + colorOf(c.id) + '">' + (c.photo ? '<img src="' + esc(c.photo) + '" alt="">' : SVG.group) + '</span>'; }
 const now = () => Date.now();
 const until = t => t && new Date(t).getTime() > now();
 const forever = t => t && new Date(t).getFullYear() > 9000;
@@ -669,6 +673,21 @@ async function uploadFiles(files) {
   }
 }
 $('fileBtn').onclick = () => $('fileIn').click();
+function squareImage(file) {
+  return new Promise((res, rej) => { const im = new Image(), u = URL.createObjectURL(file); im.onload = () => { const s = Math.min(im.width, im.height), c = document.createElement('canvas'); c.width = c.height = 400; c.getContext('2d').drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, 400, 400); URL.revokeObjectURL(u); c.toBlob(b => b ? res(b) : rej(), 'image/jpeg', .88); }; im.onerror = rej; im.src = u; });
+}
+$('photoIn').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; const c = chat(cur); if (!f || !c || !isAdmin(c.id)) return;
+  let blob; try { blob = await squareImage(f); } catch (x) { return toast('Deze foto kon niet worden gelezen'); }
+  toast('Groepsfoto uploaden...');
+  const path = c.id + '/groepsfoto-' + Date.now().toString(36) + '.jpg';
+  const { error } = await sb.storage.from(CHAT_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+  if (error) return toast('Uploaden lukte niet: ' + vertaal(error.message));
+  const url = sb.storage.from(CHAT_BUCKET).getPublicUrl(path).data.publicUrl;
+  const { error: e2 } = await sb.from('chats').update({ photo: url }).eq('id', c.id);
+  if (e2) return toast('Opslaan lukte niet: ' + vertaal(e2.message));
+  c.photo = url; sysMsg(c.id, nameOf(me.id) + ' heeft de groepsfoto veranderd'); renderInfo(); renderHeader(); renderList(); toast('Groepsfoto aangepast');
+};
 $('fileIn').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; uploadFiles(fs); };
 $('text').addEventListener('paste', e => { const fs = [...((e.clipboardData && e.clipboardData.files) || [])]; if (fs.length) { e.preventDefault(); uploadFiles(fs.map(f => f.name && f.name !== 'image.png' ? f : new File([f], 'foto-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.png', { type: f.type }))); } });
 let dz = 0;
@@ -813,7 +832,7 @@ function renderInfo() {
     h += '<div class="itop">' + (o ? avatar(o.user_id, 'lg', true) : '') + '<h3>' + esc(titleOf(c)) + '</h3><p>' + esc(o ? handleOf(o.user_id) : '') + '</p><p>' + (o && online.has(o.user_id) ? '&#128994; online' : 'offline') + '</p></div>';
     h += '<div class="isec"><button class="ibtn danger" data-ia="leave">&#128465; Chat verwijderen</button></div>';
   } else {
-    h += '<div class="itop">' + groupAv(c, 'lg') + '<h3>' + esc(c.name || 'Groep') + '</h3><p>Groep · ' + l.length + ' leden · gemaakt ' + new Date(c.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) + '</p>' + (adm ? '<button class="btn sec" data-ia="rename" style="height:32px;font-size:13px">Naam wijzigen</button>' : '') + '</div>';
+    h += '<div class="itop">' + groupAv(c, 'lg') + '<h3>' + esc(c.name || 'Groep') + '</h3><p>Groep · ' + l.length + ' leden · gemaakt ' + new Date(c.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) + '</p>' + (adm ? '<div class="phbtns"><button class="btn sec" data-ia="rename" style="height:32px;font-size:13px">Naam wijzigen</button><button class="btn sec" data-ia="photo" style="height:32px;font-size:13px">&#128247; Foto wijzigen</button>' + (c.photo ? '<button class="btn sec" data-ia="nophoto" style="height:32px;font-size:13px">Foto weghalen</button>' : '') + '</div>' : '') + '</div>';
     h += '<div class="isec"><h4>Leden' + (adm ? '<button data-ia="add">+ Toevoegen</button>' : '') + '</h4>' + l.map(m => {
       const chips = (m.role === 'admin' ? '<i class="chip acc">Admin</i>' : '') + (until(m.banned_until) ? '<i class="chip red">Verbannen ' + fmtUntil(m.banned_until) + '</i>' : '') + (until(m.muted_until) ? '<i class="chip org">Geblokkeerd ' + fmtUntil(m.muted_until) + '</i>' : '');
       return '<div class="mem">' + avatar(m.user_id, 'sm', true) + '<div class="t"><b>' + esc(m.user_id === me.id ? nameOf(m.user_id) + ' (jij)' : nameOf(m.user_id)) + '</b><span>' + esc(handleOf(m.user_id)) + '</span>' + (chips ? '<div class="chips">' + chips + '</div>' : '') + '</div>' + (adm && m.user_id !== me.id ? '<button class="icon" data-mm="' + m.user_id + '" title="Beheren">&#8943;</button>' : (m.user_id !== me.id ? '<button class="icon" data-dm="' + m.user_id + '" title="Chatten">&#128172;</button>' : '')) + '</div>';
@@ -830,6 +849,8 @@ $('info').addEventListener('click', async e => {
   const a = e.target.closest('[data-ia]'); if (!a) return; const c = chat(cur), act = a.dataset.ia;
   if (act === 'rename') { const n = prompt('Nieuwe naam voor de groep:', c.name || ''); if (n === null || !n.trim()) return; const { error } = await sb.from('chats').update({ name: n.trim().slice(0, 60) }).eq('id', c.id); if (error) return toast(vertaal(error.message)); c.name = n.trim().slice(0, 60); sysMsg(c.id, nameOf(me.id) + ' heeft de groep "' + c.name + '" genoemd'); renderInfo(); renderHeader(); renderList(); }
   if (act === 'add') openGroupModal('add');
+  if (act === 'photo') $('photoIn').click();
+  if (act === 'nophoto') { const { error } = await sb.from('chats').update({ photo: null }).eq('id', c.id); if (error) return toast(vertaal(error.message)); c.photo = null; sysMsg(c.id, nameOf(me.id) + ' heeft de groepsfoto weggehaald'); renderInfo(); renderHeader(); renderList(); }
   if (act === 'leave') { if (!confirm(c.is_group ? 'Wil je deze groep verlaten?' : 'Deze chat verwijderen? De ander kan de berichten nog wel zien.')) return; const id = c.id; if (c.is_group) await sysMsg(id, nameOf(me.id) + ' heeft de groep verlaten'); const { error } = await sb.rpc('chat_leave', { c: id }); if (error) return toast(vertaal(error.message)); chats = chats.filter(x => x.id !== id); delete msgs[id]; closeChat(); }
   if (act === 'delete') { if (!confirm('De groep "' + c.name + '" en alle berichten voor iedereen verwijderen? Dit kan niet ongedaan worden.')) return; const { error } = await sb.from('chats').delete().eq('id', c.id); if (error) return toast(vertaal(error.message)); chats = chats.filter(x => x.id !== c.id); closeChat(); toast('Groep verwijderd'); }
 });
