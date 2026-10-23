@@ -544,7 +544,13 @@ function renderList() {
 }
 $('chatList').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (b) openChat(b.dataset.c); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; [...$('tabs').children].forEach(x => x.classList.toggle('on', x === b)); renderList(); });
-function updateTitle() { const t = Object.keys(unread).reduce((a, k) => a + (chat(k) ? unread[k] : 0), 0); document.title = (t ? '(' + t + ') ' : '') + 'jimchat'; }
+function updateTitle() { const t = Object.keys(unread).reduce((a, k) => a + (chat(k) ? unread[k] : 0), 0); document.title = (t ? '(' + t + ') ' : '') + 'jimchat'; favBadge(t); }
+let favBase = null, favLast = -1;
+function favBadge(n) {
+  if (n === favLast) return; favLast = n; const link = document.querySelector('link[rel=icon]'); if (!link) return;
+  if (!favBase) favBase = link.href; if (!n) { link.href = favBase; return; }
+  const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 64, 64); x.fillStyle = '#e03131'; x.beginPath(); x.arc(46, 18, 17, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = 'bold 22px system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(n > 9 ? '9+' : String(n), 46, 19); link.href = c.toDataURL('image/png'); }; im.src = favBase;
+}
 
 /* ---------- zoeken ---------- */
 let searchSel = 0, searchItems = [], searchT = null;
