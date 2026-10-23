@@ -291,6 +291,7 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
       <button id="mPw">&#128273; Wachtwoord wijzigen</button>
       <button id="mNotif">&#128276; Meldingen aanzetten</button>
       <button id="mSound"></button>
+      <button id="mRead">&#9989; Alles als gelezen markeren</button>
       <hr>
       <button id="mOut" class="danger">&#8617; Uitloggen</button>
     </div>
@@ -1025,6 +1026,7 @@ function ping() { if (!soundOn()) return; try { actx = actx || new (window.Audio
 function renderSound() { $('mSound').innerHTML = soundOn() ? '&#128266; Geluid uitzetten' : '&#128263; Geluid aanzetten'; }
 $('mSound').onclick = () => { localStorage.setItem('jimchat-sound', soundOn() ? '0' : '1'); renderSound(); if (soundOn()) ping(); toast(soundOn() ? 'Geluid staat aan' : 'Geluid staat uit'); };
 renderSound();
+$('mRead').onclick = async () => { $('menu').classList.add('hidden'); const ids = Object.keys(unread).filter(k => unread[k] > 0 && chat(k)); if (!ids.length) return toast('Je hebt geen ongelezen berichten'); ids.forEach(k => unread[k] = 0); renderList(); updateTitle(); await Promise.all(ids.map(k => sb.rpc('chat_mark_read', { c: k }))); toast(ids.length + (ids.length === 1 ? ' chat' : ' chats') + ' als gelezen gemarkeerd'); };
 $('mOut').onclick = async () => { $('menu').classList.add('hidden'); stopLive(); await sb.auth.signOut(); };
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { document.querySelectorAll('.mbg').forEach(m => m.classList.add('hidden')); closePop(); $('menu').classList.add('hidden'); }
