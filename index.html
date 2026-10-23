@@ -182,6 +182,8 @@ section.chat{display:flex;flex-direction:column;min-width:0;min-height:0;backgro
 .dropz{position:absolute;inset:8px;border:3px dashed var(--acc2);border-radius:16px;background:var(--tint);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:var(--acc);z-index:35;pointer-events:none}
 .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
 .viewer img{max-width:100%;max-height:100%;border-radius:8px}
+.fcard .fi.jf{color:#fff;font-size:12px;text-transform:none}
+.row.mine .fcard .fi.jf{color:#fff}
 .cempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:30px}
 .cempty .logo svg{width:84px;height:84px;margin-bottom:16px;opacity:.95}
 .cempty h3{color:var(--text);font-size:20px;margin-bottom:4px}
@@ -316,6 +318,7 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
             <button class="icon" id="fileBtn" title="Bestand of foto sturen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg></button>
             <input type="file" id="fileIn" multiple hidden>
             <input type="file" id="photoIn" accept="image/*" hidden>
+            <button class="icon" id="jfBtn" title="Iets uit jf.office sturen" style="font-weight:700;font-size:13px">jf.</button>
             <textarea id="text" rows="1" maxlength="4000" placeholder="Typ een bericht"></textarea>
             <button id="send" title="Versturen" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
           </div>
@@ -339,6 +342,17 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
     <div class="plist" id="gmList"></div>
     <div class="foot"><button type="button" class="btn sec" data-close>Annuleren</button><button class="btn" id="gmOk" type="submit">Groep maken</button></div>
   </form>
+</div>
+
+<div class="mbg hidden" id="jfModal">
+  <div class="modal" style="max-width:520px">
+    <h2>Uit jf.office sturen</h2>
+    <p>Kies een bestand uit je jf-apps. Het wordt gedeeld via een link, zodat iedereen in de chat het kan openen (bekijken, niet bewerken).</p>
+    <div class="tabs" id="jfTabs" style="padding:0;flex-wrap:wrap;margin-bottom:10px"></div>
+    <input class="inp" id="jfSearch" placeholder="Zoeken..." autocomplete="off">
+    <div class="plist" id="jfList" style="max-height:340px"></div>
+    <div class="foot"><button class="btn sec" data-close>Sluiten</button></div>
+  </div>
 </div>
 
 <div class="mbg hidden" id="durModal">
@@ -648,7 +662,17 @@ function msgHtml(m, prev) {
   return '<div class="row' + (mine ? ' mine' : '') + (cont ? ' cont' : ' first') + '" data-m="' + m.id + '">' + (grp ? avatar(m.user_id, 'sm') : '') + '<div class="bub' + (m.deleted ? ' del' : '') + '">' + inner + meta + '</div>' + acts + '</div>';
 }
 function fsize(b) { return b < 1024 ? b + ' B' : b < 1048576 ? Math.round(b / 1024) + ' KB' : (b / 1048576).toFixed(1).replace('.', ',') + ' MB'; }
+const JFAPPS = {
+  pages: { name: 'jf.pages', label: 'Documenten', one: 'Document', table: 'documents', color: '#3b6cff', path: 'jf-pages', q: 'view' },
+  cells: { name: 'jf.cells', label: 'Spreadsheets', one: 'Spreadsheet', table: 'workbooks', color: '#2f9e44', path: 'jf-cells', q: 'view' },
+  pres: { name: 'jf.presentations', label: 'Presentaties', one: 'Presentatie', table: 'presentations', color: '#f59f00', path: 'jf-presentations', q: 'view' },
+  notes: { name: 'jf.notes', label: 'Notities', one: 'Notitieblok', table: 'notebooks', color: '#e03131', path: 'jf-notes', q: 'view' },
+  forms: { name: 'jf.forms', label: 'Formulieren', one: 'Formulier', table: 'forms', color: '#f76707', path: 'jf-forms', q: 'f' },
+  draw: { name: 'jf.draw', label: 'Tekeningen', one: 'Tekening', table: 'drawings', color: '#e64980', path: 'jf-draw', q: 'view' },
+  drive: { name: 'jf.drive', label: 'Drive', one: 'Bestand', color: '#0ca678' }
+};
 function fileHtml(f) {
+  if (f.jf && f.jf !== 'drive' && JFAPPS[f.jf]) { const a = JFAPPS[f.jf]; return '<a class="fcard" href="' + esc(f.url) + '" target="_blank" rel="noopener"><span class="fi jf" style="background:' + a.color + '">jf.</span><span><b>' + esc(f.name || a.one) + '</b><span>' + a.name + ' · ' + a.one.toLowerCase() + ' openen</span></span></a>'; }
   const u = esc(f.url || ''), n = esc(f.name || 'bestand');
   if (/^image\//.test(f.type || '')) return '<img class="img" src="' + u + '" alt="' + n + '" loading="lazy" data-view="' + u + '">';
   const ext = (String(f.name || '').split('.').pop() || '').slice(0, 4);
@@ -673,6 +697,44 @@ async function uploadFiles(files) {
   }
 }
 $('fileBtn').onclick = () => $('fileIn').click();
+let jfTab = 'pages', jfItems = [];
+$('jfTabs').innerHTML = Object.keys(JFAPPS).map(k => '<button data-jt="' + k + '"><i style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;background:' + JFAPPS[k].color + '"></i>' + JFAPPS[k].label + '</button>').join('');
+$('jfBtn').onclick = () => { if (!cur) return; $('jfModal').classList.remove('hidden'); $('jfSearch').value = ''; loadJf(); };
+$('jfTabs').addEventListener('click', e => { const b = e.target.closest('[data-jt]'); if (!b) return; jfTab = b.dataset.jt; loadJf(); });
+$('jfSearch').addEventListener('input', renderJf);
+async function loadJf() {
+  [...$('jfTabs').children].forEach(b => b.classList.toggle('on', b.dataset.jt === jfTab));
+  $('jfList').innerHTML = '<div class="none" style="padding:14px;text-align:center;color:var(--muted)">Laden...</div>';
+  const a = JFAPPS[jfTab], tab = jfTab;
+  if (tab === 'drive') {
+    const { data, error } = await sb.storage.from('drive').list(me.id, { limit: 200, sortBy: { column: 'updated_at', order: 'desc' } });
+    jfItems = error ? [] : (data || []).filter(x => x.id && x.name !== '.keep').map(x => ({ id: me.id + '/' + x.name, title: x.name, size: x.metadata && x.metadata.size, type: x.metadata && x.metadata.mimetype, at: x.updated_at || x.created_at }));
+  } else {
+    const { data, error } = await sb.from(a.table).select('id,title,updated_at,is_public').is('deleted_at', null).order('updated_at', { ascending: false }).limit(100);
+    jfItems = error ? [] : (data || []).map(x => ({ id: x.id, title: x.title, pub: x.is_public, at: x.updated_at }));
+  }
+  if (tab === jfTab) renderJf();
+}
+function renderJf() {
+  const q = $('jfSearch').value.trim().toLowerCase(), a = JFAPPS[jfTab], l = jfItems.filter(x => !q || String(x.title || '').toLowerCase().includes(q));
+  $('jfList').innerHTML = l.length ? l.map((x, i) => '<button type="button" class="res" data-ji="' + jfItems.indexOf(x) + '"><span class="av sm" style="background:' + a.color + ';border-radius:9px;font-size:11px">jf.</span><div class="t"><b>' + esc(x.title || 'Naamloos') + '</b><span>' + (x.at ? fmtList(x.at) : '') + (x.size ? ' · ' + fsize(x.size) : '') + (x.pub ? ' · al gedeeld' : '') + '</span></div><span class="go">Sturen</span></button>').join('') : '<div class="none" style="padding:14px;text-align:center;color:var(--muted);font-size:14px">' + (jfTab === 'drive' ? 'Geen bestanden in je jf.drive (alleen de hoofdmap).' : 'Je hebt hier nog niks.') + '</div>';
+}
+$('jfList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-ji]'); if (!b) return; const x = jfItems[+b.dataset.ji], tab = jfTab, a = JFAPPS[tab], id = cur; if (!x || !id) return;
+  b.querySelector('.go').textContent = 'Bezig...';
+  let file;
+  if (tab === 'drive') {
+    const { data, error } = await sb.storage.from('drive').createSignedUrl(x.id, 60 * 60 * 24 * 365);
+    if (error) { b.querySelector('.go').textContent = 'Sturen'; return toast('Delen lukte niet: ' + vertaal(error.message)); }
+    file = { jf: 'drive', url: data.signedUrl, name: x.title, size: x.size || 0, type: x.type || '' };
+  } else {
+    if (!x.pub) { const { error } = await sb.from(a.table).update({ is_public: true }).eq('id', x.id); if (error) { b.querySelector('.go').textContent = 'Sturen'; return toast('Delen lukte niet: ' + vertaal(error.message)); } x.pub = true; }
+    file = { jf: tab, id: x.id, name: x.title || a.one, url: new URL('../' + a.path + '/?' + a.q + '=' + x.id, location.href).href };
+  }
+  const { data, error } = await sb.from('chat_messages').insert({ chat_id: id, user_id: me.id, kind: 'file', body: a.name + ': ' + String(file.name).slice(0, 200), file }).select('*').single();
+  if (error) { b.querySelector('.go').textContent = 'Sturen'; return toast('Versturen lukte niet: ' + vertaal(error.message)); }
+  $('jfModal').classList.add('hidden'); addMsg(data);
+});
 function squareImage(file) {
   return new Promise((res, rej) => { const im = new Image(), u = URL.createObjectURL(file); im.onload = () => { const s = Math.min(im.width, im.height), c = document.createElement('canvas'); c.width = c.height = 400; c.getContext('2d').drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, 400, 400); URL.revokeObjectURL(u); c.toBlob(b => b ? res(b) : rej(), 'image/jpeg', .88); }; im.onerror = rej; im.src = u; });
 }
