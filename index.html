@@ -168,6 +168,17 @@ section.chat{display:flex;flex-direction:column;min-width:0;min-height:0;backgro
 .emoji{position:absolute;bottom:62px;left:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px;display:grid;grid-template-columns:repeat(8,36px);gap:2px;z-index:30}
 .emoji button{width:36px;height:36px;border-radius:8px;font-size:20px}
 .emoji button:hover{background:var(--hover)}
+.bub .img{display:block;max-width:min(320px,100%);max-height:320px;border-radius:10px;margin:2px 0 4px;cursor:zoom-in;background:var(--soft)}
+.fcard{display:flex;align-items:center;gap:10px;padding:6px 4px 2px;min-width:200px;color:inherit;text-decoration:none;white-space:normal}
+.fcard .fi{width:38px;height:38px;border-radius:9px;background:var(--tint);color:var(--acc);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:0 0 auto;text-transform:uppercase}
+.row.mine .fcard .fi{background:rgba(255,255,255,.22);color:#fff}
+.fcard b{display:block;font-size:14px;overflow-wrap:anywhere}
+.fcard span{display:block;font-size:12px;opacity:.75}
+.row.mine .bub .fcard{color:#fff}
+.uprow{font-size:13px;color:var(--acc);padding:0 4px 6px}
+.dropz{position:absolute;inset:8px;border:3px dashed var(--acc2);border-radius:16px;background:var(--tint);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:var(--acc);z-index:35;pointer-events:none}
+.viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+.viewer img{max-width:100%;max-height:100%;border-radius:8px}
 .cempty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:30px}
 .cempty .logo svg{width:84px;height:84px;margin-bottom:16px;opacity:.95}
 .cempty h3{color:var(--text);font-size:20px;margin-bottom:4px}
@@ -246,14 +257,14 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
   <form class="card" id="authForm">
     <span class="logo"></span>
     <h1>jimchat</h1>
-    <p class="lead">Chat met je vrienden. Log in met je jf-account.</p>
+    <p class="lead">Chat met je vrienden. Log in met je gebruikersnaam.</p>
     <div class="seg" id="authSeg"><button type="button" data-m="login" class="on">Inloggen</button><button type="button" data-m="register">Account maken</button></div>
-    <label class="field hidden" id="nameField"><span>Je naam</span><input class="inp" id="aName" maxlength="40" autocomplete="nickname" placeholder="Hoe heet je?"></label>
-    <label class="field"><span>E-mailadres</span><input class="inp" id="aEmail" type="email" required autocomplete="email"></label>
+    <label class="field"><span id="aUserL">Gebruikersnaam</span><input class="inp" id="aEmail" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="bijv. jim_2b"></label>
+    <label class="field hidden" id="nameField"><span>Je naam (mag leeg)</span><input class="inp" id="aName" maxlength="40" autocomplete="nickname" placeholder="Hoe heet je?"></label>
     <label class="field"><span>Wachtwoord</span><input class="inp" id="aPass" type="password" required minlength="6" autocomplete="current-password"></label>
     <button class="btn full" id="aSubmit" type="submit">Inloggen</button>
     <div class="msg" id="aMsg"></div>
-    <p class="hint">Hetzelfde account als jf.office, jf.pages en de andere jf-apps.</p>
+    <p class="hint">Je hebt geen e-mail nodig. Heb je al een jf-account? Dan kun je ook met je e-mailadres inloggen.</p>
   </form>
 </div>
 
@@ -262,7 +273,7 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
     <div class="brand"><span class="logo"></span><span class="w">jim<b>chat</b></span></div>
     <div class="search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="search" placeholder="Zoek iemand op e-mail of naam..." autocomplete="off" aria-label="Zoeken">
+      <input id="search" placeholder="Zoek iemand op gebruikersnaam of naam..." autocomplete="off" aria-label="Zoeken">
       <div class="drop hidden" id="drop"></div>
     </div>
     <div class="right">
@@ -285,7 +296,7 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
       <div id="chatList"></div>
     </aside>
     <section class="chat" id="chat">
-      <div class="cempty" id="cempty"><span class="logo"></span><h3>Welkom bij jimchat</h3><p>Zoek bovenaan iemand op e-mail om te gaan chatten,<br>of maak een groep met je vrienden.</p></div>
+      <div class="cempty" id="cempty"><span class="logo"></span><h3>Welkom bij jimchat</h3><p>Zoek bovenaan iemand op gebruikersnaam om te gaan chatten,<br>of maak een groep met je vrienden.</p></div>
       <div id="cview" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0">
         <div class="chead">
           <button class="icon" id="back" title="Terug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -299,6 +310,8 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
           <div class="replybar hidden" id="replyBar"><div><b id="rbName"></b><span id="rbText"></span></div><button class="icon" id="rbX" style="width:28px;height:28px">&#10005;</button></div>
           <div class="cbox" id="cbox">
             <button class="icon" id="emojiBtn" title="Emoji">&#128512;</button>
+            <button class="icon" id="fileBtn" title="Bestand of foto sturen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg></button>
+            <input type="file" id="fileIn" multiple hidden>
             <textarea id="text" rows="1" maxlength="4000" placeholder="Typ een bericht"></textarea>
             <button id="send" title="Versturen" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
           </div>
@@ -317,7 +330,7 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
     <h2 id="gmTitle">Nieuwe groep</h2>
     <p id="gmText">Geef je groep een naam en kies wie erin komt. Jij wordt de admin.</p>
     <label class="field" id="gmNameF"><span>Groepsnaam</span><input class="inp" id="gmName" maxlength="60" placeholder="Bijv. Klas 2B"></label>
-    <input class="inp" id="gmSearch" placeholder="Zoek op e-mail of naam..." autocomplete="off">
+    <input class="inp" id="gmSearch" placeholder="Zoek op gebruikersnaam of naam..." autocomplete="off">
     <div class="picks" id="gmPicks"></div>
     <div class="plist" id="gmList"></div>
     <div class="foot"><button type="button" class="btn sec" data-close>Annuleren</button><button class="btn" id="gmOk" type="submit">Groep maken</button></div>
@@ -335,6 +348,8 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
 
 <script>
 const SUPABASE_URL = 'https://azzhruqhvmxqwsyatlju.supabase.co';
+const USER_DOMAIN = '@jimchat.app';
+const CHAT_BUCKET = 'chat';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const LOGO = $('logoT').innerHTML;
@@ -351,14 +366,15 @@ const SVG = {
 const EMOJI = '😀 😂 🥹 😊 😍 🥰 😎 🤩 😜 🤔 😅 😭 😡 😴 🤯 🥳 👍 👎 👏 🙌 🙏 💪 👀 🔥 ❤️ 💙 💚 💛 💯 ✨ 🎉 🎮 ⚽ 📚 ✅ ❌ 😬 🤝 👋 🍕'.split(' ');
 const COLORS = ['#1098ad', '#7048e8', '#e8590c', '#2f9e44', '#d6336c', '#1c7ed6', '#f08c00', '#0ca678', '#ae3ec9', '#e03131'];
 
-let sb = null, me = null, started = false, mode = 'login';
+let sb = null, me = null, started = false, mode = 'login', HAS_USERNAME = false;
 let profiles = {}, chats = [], members = {}, msgs = {}, more = {}, unread = {}, cur = null, filter = 'all';
 let online = new Set(), typing = {}, live = null, dbch = null, replyTo = null, editId = null, lastTyping = 0, groupMode = 'new';
 
 /* ---------- hulpjes ---------- */
 function toast(t) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.append(d); setTimeout(() => d.remove(), 2600); }
 function colorOf(id) { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
-function nameOf(id) { const p = profiles[id]; if (!p) return 'Onbekend'; if (p.name) return p.name; const e = (p.email || '').split('@')[0]; return e ? e[0].toUpperCase() + e.slice(1) : 'Onbekend'; }
+function nameOf(id) { const p = profiles[id]; if (!p) return 'Onbekend'; if (p.name) return p.name; const e = p.username || (p.email || '').split('@')[0]; return e ? e[0].toUpperCase() + e.slice(1) : 'Onbekend'; }
+function handleOf(id) { const p = profiles[id] || {}, e = p.email || ''; if (p.username) return '@' + p.username; if (e.endsWith(USER_DOMAIN)) return '@' + e.slice(0, -USER_DOMAIN.length); return e; }
 function avatar(id, cls, dot) { const n = nameOf(id); return '<span class="av ' + (cls || '') + '" style="background:' + colorOf(id) + '">' + esc((n[0] || '?').toUpperCase()) + (dot && online.has(id) ? '<i class="dot"></i>' : '') + '</span>'; }
 function groupAv(c, cls) { return '<span class="av grp ' + (cls || '') + '" style="background:' + colorOf(c.id) + '">' + SVG.group + '</span>'; }
 const now = () => Date.now();
@@ -377,8 +393,8 @@ function linkify(s) { return esc(s).replace(/(https?:\/\/[^\s<]+[^\s<.,!?)])/g, 
 function vertaal(m) {
   m = String(m || '');
   if (/failed to fetch|network|load failed/i.test(m)) return 'Geen verbinding. Check je internet of zet je adblocker uit voor deze site.';
-  if (/invalid login/i.test(m)) return 'Dit e-mailadres en wachtwoord horen niet bij elkaar.';
-  if (/already registered|already been registered/i.test(m)) return 'Er bestaat al een account met dit e-mailadres. Log in.';
+  if (/invalid login/i.test(m)) return 'Deze gebruikersnaam en dit wachtwoord horen niet bij elkaar.';
+  if (/already registered|already been registered/i.test(m)) return 'Deze gebruikersnaam is al bezet. Kies een andere of log in.';
   if (/at least 6|password should/i.test(m)) return 'Kies een wachtwoord van minstens 6 tekens.';
   if (/rate limit/i.test(m)) return 'Te veel pogingen. Wacht even en probeer het opnieuw.';
   if (/not confirmed/i.test(m)) return 'Je e-mailadres is nog niet bevestigd.';
@@ -421,6 +437,7 @@ function onSession(session) {
 /* ---------- inloggen ---------- */
 function setMsg(t, ok) { $('aMsg').textContent = t || ''; $('aMsg').className = 'msg' + (ok ? ' ok' : ''); }
 $('authSeg').addEventListener('click', e => {
+  setTimeout(() => { $('aUserL').textContent = mode === 'register' ? 'Kies een gebruikersnaam' : 'Gebruikersnaam'; }, 0);
   const b = e.target.closest('[data-m]'); if (!b) return; mode = b.dataset.m;
   [...$('authSeg').children].forEach(x => x.classList.toggle('on', x === b));
   $('nameField').classList.toggle('hidden', mode !== 'register'); $('aSubmit').textContent = mode === 'register' ? 'Account maken' : 'Inloggen';
@@ -428,11 +445,14 @@ $('authSeg').addEventListener('click', e => {
 });
 $('authForm').onsubmit = async e => {
   e.preventDefault(); if (!sb) return;
-  const email = $('aEmail').value.trim().toLowerCase(), password = $('aPass').value;
+  const login = $('aEmail').value.trim().toLowerCase(), password = $('aPass').value;
+  if (mode === 'register' && !/^[a-z0-9_.]{3,20}$/.test(login)) return setMsg('Gebruikersnaam: 3 tot 20 tekens, alleen letters, cijfers, _ en punt.');
+  if (mode === 'login' && !login) return setMsg('Vul je gebruikersnaam in.');
+  const email = login.indexOf('@') >= 0 ? login : login + USER_DOMAIN;
   if (password.length < 6) return setMsg('Kies een wachtwoord van minstens 6 tekens.');
   $('aSubmit').disabled = true; setMsg('');
   let r;
-  try { r = mode === 'login' ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password, options: { data: { name: $('aName').value.trim() } } }); }
+  try { r = mode === 'login' ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password, options: { data: { username: login, name: $('aName').value.trim() || login } } }); }
   catch (err) { r = { error: { message: String(err && err.message || err) } }; }
   $('aSubmit').disabled = false;
   if (r.error) return setMsg(vertaal(r.error.message));
@@ -441,14 +461,14 @@ $('authForm').onsubmit = async e => {
 
 /* ---------- laden ---------- */
 async function ensureProfile() {
-  const { data } = await sb.from('profiles').select('id,email,name').eq('id', me.id).maybeSingle();
+  const { data } = await sb.from('profiles').select('*').eq('id', me.id).maybeSingle();
   if (data) { profiles[me.id] = data; return; }
-  const p = { id: me.id, email: (me.email || '').toLowerCase(), name: (me.user_metadata && me.user_metadata.name) || null };
+  const md = me.user_metadata || {}, p = { id: me.id, email: (me.email || '').toLowerCase(), name: md.name || null }; if (md.username) p.username = md.username;
   await sb.from('profiles').upsert(p); profiles[me.id] = p;
 }
 async function fetchProfiles(ids) {
   ids = [...new Set(ids)].filter(id => id && !profiles[id]); if (!ids.length) return;
-  const { data } = await sb.from('profiles').select('id,email,name').in('id', ids);
+  const { data } = await sb.from('profiles').select('*').in('id', ids);
   (data || []).forEach(p => profiles[p.id] = p);
 }
 async function boot() {
@@ -481,7 +501,7 @@ function reloadSoon() { clearTimeout(reloadT); reloadT = setTimeout(async () => 
 /* ---------- lijst ---------- */
 function renderMe() {
   $('meAv').innerHTML = avatar(me.id, 'sm'); $('meName').textContent = nameOf(me.id);
-  $('mName').textContent = nameOf(me.id); $('mMail').textContent = me.email;
+  $('mName').textContent = nameOf(me.id); $('mMail').textContent = handleOf(me.id);
   $('mNotif').classList.toggle('hidden', !('Notification' in window) || Notification.permission === 'granted');
 }
 function preview(c) {
@@ -492,7 +512,7 @@ function preview(c) {
 function renderList() {
   const list = chats.slice().sort((a, b) => String(b.last_at).localeCompare(String(a.last_at))).filter(c =>
     filter === 'all' || (filter === 'dm' && !c.is_group) || (filter === 'grp' && c.is_group) || (filter === 'unread' && unread[c.id] > 0));
-  if (!chats.length) { $('chatList').innerHTML = '<div class="lempty"><b style="display:block;color:var(--text);margin-bottom:4px">Nog geen chats</b>Typ bovenaan een e-mailadres om iemand te vinden.</div>'; return; }
+  if (!chats.length) { $('chatList').innerHTML = '<div class="lempty"><b style="display:block;color:var(--text);margin-bottom:4px">Nog geen chats</b>Typ bovenaan een gebruikersnaam om iemand te vinden.</div>'; return; }
   if (!list.length) { $('chatList').innerHTML = '<div class="lempty">Niks in deze lijst.</div>'; return; }
   $('chatList').innerHTML = list.map(c => {
     const r = myRow(c.id), n = unread[c.id] || 0, ban = r && until(r.banned_until), mute = r && until(r.muted_until);
@@ -518,10 +538,10 @@ $('search').addEventListener('keydown', e => {
 });
 document.addEventListener('mousedown', e => { if (!e.target.closest('.search')) $('drop').classList.add('hidden'); if (!e.target.closest('#menu') && !e.target.closest('#meBtn')) $('menu').classList.add('hidden'); if (!e.target.closest('#emoji') && !e.target.closest('#emojiBtn')) $('emoji').classList.add('hidden'); if (!e.target.closest('.pop')) closePop(); });
 async function searchPeople(q, limit) {
-  let qb = sb.from('profiles').select('id,email,name').neq('id', me.id).order('email').limit(limit || 30);
+  let qb = sb.from('profiles').select('*').neq('id', me.id).order('email').limit(limit || 30);
   const s = q.replace(/[%,()*]/g, ' ').trim();
-  if (s) qb = qb.or('email.ilike.%' + s + '%,name.ilike.%' + s + '%');
-  const { data } = await qb; (data || []).forEach(p => profiles[p.id] = p); return data || [];
+  if (s) qb = qb.or('email.ilike.%' + s + '%,name.ilike.%' + s + '%' + (HAS_USERNAME ? ',username.ilike.%' + s + '%' : ''));
+  const { data } = await qb; (data || []).forEach(p => { profiles[p.id] = p; if ('username' in p) HAS_USERNAME = true; }); return data || [];
 }
 async function runSearch() {
   const q = $('search').value.trim().toLowerCase();
@@ -531,7 +551,7 @@ async function runSearch() {
   let h = '';
   if (cs.length) h += '<h4>Chats</h4>' + cs.map((c, i) => '<button class="res" data-i="' + i + '">' + avOf(c, 'sm', true) + '<div class="t"><b>' + esc(titleOf(c)) + '</b><span>' + esc(preview(c)) + '</span></div><span class="go">Openen</span></button>').join('');
   h += '<h4>' + (q ? 'Mensen' : 'Iedereen op jimchat') + '</h4>';
-  h += people.length ? people.map((p, i) => '<button class="res" data-i="' + (cs.length + i) + '">' + avatar(p.id, 'sm', true) + '<div class="t"><b>' + esc(nameOf(p.id)) + '</b><span>' + esc(p.email) + '</span></div><span class="go">Chatten</span></button>').join('') : '<div class="none">' + (q ? 'Niemand gevonden met "' + esc(q) + '".<br>Heeft die persoon al een account?' : 'Er zijn nog geen andere accounts.') + '</div>';
+  h += people.length ? people.map((p, i) => '<button class="res" data-i="' + (cs.length + i) + '">' + avatar(p.id, 'sm', true) + '<div class="t"><b>' + esc(nameOf(p.id)) + '</b><span>' + esc(handleOf(p.id)) + '</span></div><span class="go">Chatten</span></button>').join('') : '<div class="none">' + (q ? 'Niemand gevonden met "' + esc(q) + '".<br>Heeft die persoon al een account?' : 'Er zijn nog geen andere accounts.') + '</div>';
   $('drop').innerHTML = h; $('drop').classList.remove('hidden'); searchSel = 0; markSel();
 }
 function markSel() { $('drop').querySelectorAll('.res').forEach(b => b.classList.toggle('sel', +b.dataset.i === searchSel)); }
@@ -601,7 +621,7 @@ function renderHeader() {
   sub.className = tp ? 'typing' : '';
   if (tp) sub.textContent = tp;
   else if (c.is_group) { const l = members[cur] || []; const on = l.filter(m => online.has(m.user_id) && m.user_id !== me.id).length; sub.textContent = l.length + ' leden' + (on ? ' · ' + on + ' online' : ''); }
-  else { const o = others(cur)[0]; sub.textContent = o ? (online.has(o.user_id) ? 'online' : (profiles[o.user_id] || {}).email || '') : ''; }
+  else { const o = others(cur)[0]; sub.textContent = o ? (online.has(o.user_id) ? 'online' : handleOf(o.user_id)) : ''; }
   $('typingRow').textContent = '';
 }
 
@@ -614,13 +634,50 @@ function msgHtml(m, prev) {
   let inner = '';
   if (grp && !mine && !cont) inner += '<span class="nm" style="color:' + colorOf(m.user_id) + '">' + esc(nameOf(m.user_id)) + '</span>';
   if (m.reply_to && !m.deleted) { const o = (msgs[m.chat_id] || []).find(x => x.id === m.reply_to); inner += '<span class="quote" data-jump="' + m.reply_to + '"><b>' + (o ? esc(o.user_id === me.id ? 'Jij' : nameOf(o.user_id)) : 'Bericht') + '</b>' + (o ? esc(o.deleted ? 'Verwijderd bericht' : o.body.slice(0, 120)) : 'Ouder bericht') + '</span>'; }
-  inner += m.deleted ? '&#128683; Dit bericht is verwijderd' : linkify(m.body);
+  if (m.deleted) inner += '&#128683; Dit bericht is verwijderd';
+  else if (m.kind === 'file' && m.file) inner += fileHtml(m.file);
+  else inner += linkify(m.body);
   const tick = mine && !m.deleted ? '<span class="tk' + (otherRead(m) ? ' read' : '') + '">' + (otherRead(m) ? ' &#10003;&#10003;' : ' &#10003;') + '</span>' : '';
   const meta = '<span class="meta">' + (m.edited_at && !m.deleted ? 'bewerkt · ' : '') + fmtTime(m.created_at) + tick + '</span>';
-  const canEdit = mine && !m.deleted, canDel = !m.deleted && (mine || isAdmin(m.chat_id));
+  const canEdit = mine && !m.deleted && m.kind !== 'file', canDel = !m.deleted && (mine || isAdmin(m.chat_id));
   const acts = m.deleted ? '' : '<div class="acts"><button data-act="reply" title="Antwoorden">' + SVG.reply + '</button>' + (canEdit ? '<button data-act="edit" title="Bewerken">' + SVG.edit + '</button>' : '') + (canDel ? '<button data-act="del" title="Verwijderen">' + SVG.del + '</button>' : '') + '</div>';
   return '<div class="row' + (mine ? ' mine' : '') + (cont ? ' cont' : ' first') + '" data-m="' + m.id + '">' + (grp ? avatar(m.user_id, 'sm') : '') + '<div class="bub' + (m.deleted ? ' del' : '') + '">' + inner + meta + '</div>' + acts + '</div>';
 }
+function fsize(b) { return b < 1024 ? b + ' B' : b < 1048576 ? Math.round(b / 1024) + ' KB' : (b / 1048576).toFixed(1).replace('.', ',') + ' MB'; }
+function fileHtml(f) {
+  const u = esc(f.url || ''), n = esc(f.name || 'bestand');
+  if (/^image\//.test(f.type || '')) return '<img class="img" src="' + u + '" alt="' + n + '" loading="lazy" data-view="' + u + '">';
+  const ext = (String(f.name || '').split('.').pop() || '').slice(0, 4);
+  return '<a class="fcard" href="' + u + '" target="_blank" rel="noopener" download="' + n + '"><span class="fi">' + esc(ext || 'file') + '</span><span><b>' + n + '</b><span>' + fsize(f.size || 0) + ' · downloaden</span></span></a>';
+}
+async function uploadFiles(files) {
+  if (!cur || !files.length) return; const id = cur, r = myRow(id);
+  if (r && until(r.muted_until)) return toast('Je kunt hier op dit moment niks sturen.');
+  for (const f of files) {
+    if (f.size > 25 * 1024 * 1024) { toast(f.name + ' is te groot (max 25 MB)'); continue; }
+    const safe = (f.name || 'bestand').normalize('NFD').replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80) || 'bestand';
+    const path = id + '/' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7) + '-' + safe;
+    const up = document.createElement('div'); up.className = 'uprow'; up.textContent = '\u2191 ' + f.name + ' uploaden...'; $('compose').prepend(up);
+    const { error } = await sb.storage.from(CHAT_BUCKET).upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false });
+    up.remove();
+    if (error) { toast('Uploaden lukte niet: ' + vertaal(error.message)); continue; }
+    const url = sb.storage.from(CHAT_BUCKET).getPublicUrl(path).data.publicUrl;
+    const file = { path, url, name: f.name || safe, size: f.size, type: f.type || '' };
+    const { data, error: e2 } = await sb.from('chat_messages').insert({ chat_id: id, user_id: me.id, kind: 'file', body: '\ud83d\udcce ' + file.name.slice(0, 200), file }).select('*').single();
+    if (e2) { toast('Versturen lukte niet: ' + vertaal(e2.message)); continue; }
+    addMsg(data);
+  }
+}
+$('fileBtn').onclick = () => $('fileIn').click();
+$('fileIn').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; uploadFiles(fs); };
+$('text').addEventListener('paste', e => { const fs = [...((e.clipboardData && e.clipboardData.files) || [])]; if (fs.length) { e.preventDefault(); uploadFiles(fs.map(f => f.name && f.name !== 'image.png' ? f : new File([f], 'foto-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.png', { type: f.type }))); } });
+let dz = 0;
+const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].indexOf('Files') >= 0;
+$('cview').addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); dz++; if (!$('dropz')) { const d = document.createElement('div'); d.id = 'dropz'; d.className = 'dropz'; d.textContent = 'Laat los om te sturen'; $('cview').append(d); } });
+$('cview').addEventListener('dragleave', e => { if (!hasFiles(e)) return; dz = Math.max(0, dz - 1); if (!dz && $('dropz')) $('dropz').remove(); });
+$('cview').addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+$('cview').addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dz = 0; if ($('dropz')) $('dropz').remove(); uploadFiles([...e.dataTransfer.files]); });
+$('cview').style.position = 'relative';
 function renderMsgs(toBottom) {
   const box = $('msgs'), list = msgs[cur] || [], atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80, oldH = box.scrollHeight, oldTop = box.scrollTop;
   let h = more[cur] ? '<button class="more" id="loadMore">Oudere berichten laden</button>' : '';
@@ -628,11 +685,13 @@ function renderMsgs(toBottom) {
   let lastDay = '';
   list.forEach((m, i) => { const d = new Date(m.created_at).toDateString(); if (d !== lastDay) { h += '<div class="day">' + fmtDay(m.created_at) + '</div>'; lastDay = d; } h += msgHtml(m, i ? list[i - 1] : null); });
   box.innerHTML = h;
+  if (toBottom === true || (toBottom !== 'keep' && atBottom)) box.querySelectorAll('img.img').forEach(im => im.addEventListener('load', () => { box.scrollTop = box.scrollHeight; }, { once: true }));
   if (toBottom === 'keep') box.scrollTop = box.scrollHeight - oldH + oldTop;
   else if (toBottom || atBottom) box.scrollTop = box.scrollHeight;
 }
 $('msgs').addEventListener('click', async e => {
   if (e.target.id === 'loadMore') { const id = cur, first = (msgs[id] || [])[0]; e.target.textContent = 'Laden...'; await loadMsgs(id, first && first.created_at); if (cur === id) renderMsgs('keep'); return; }
+  const v = e.target.closest('[data-view]'); if (v) { const d = document.createElement('div'); d.className = 'viewer'; d.innerHTML = '<img src="' + esc(v.dataset.view) + '" alt="">'; d.onclick = () => d.remove(); document.body.append(d); return; }
   const j = e.target.closest('[data-jump]'); if (j) { const el = $('msgs').querySelector('[data-m="' + j.dataset.jump + '"]'); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1300); } return; }
   const row = e.target.closest('.row'); if (!row) return;
   const m = (msgs[cur] || []).find(x => x.id === row.dataset.m); if (!m) return;
@@ -751,13 +810,13 @@ function renderInfo() {
   let h = '<div class="ihead"><b>' + (c.is_group ? 'Groepsinfo' : 'Info') + '</b><button class="icon" id="iClose">&#10005;</button></div>';
   if (!c.is_group) {
     const o = others(cur)[0];
-    h += '<div class="itop">' + (o ? avatar(o.user_id, 'lg', true) : '') + '<h3>' + esc(titleOf(c)) + '</h3><p>' + esc(o ? (profiles[o.user_id] || {}).email : '') + '</p><p>' + (o && online.has(o.user_id) ? '&#128994; online' : 'offline') + '</p></div>';
+    h += '<div class="itop">' + (o ? avatar(o.user_id, 'lg', true) : '') + '<h3>' + esc(titleOf(c)) + '</h3><p>' + esc(o ? handleOf(o.user_id) : '') + '</p><p>' + (o && online.has(o.user_id) ? '&#128994; online' : 'offline') + '</p></div>';
     h += '<div class="isec"><button class="ibtn danger" data-ia="leave">&#128465; Chat verwijderen</button></div>';
   } else {
     h += '<div class="itop">' + groupAv(c, 'lg') + '<h3>' + esc(c.name || 'Groep') + '</h3><p>Groep · ' + l.length + ' leden · gemaakt ' + new Date(c.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) + '</p>' + (adm ? '<button class="btn sec" data-ia="rename" style="height:32px;font-size:13px">Naam wijzigen</button>' : '') + '</div>';
     h += '<div class="isec"><h4>Leden' + (adm ? '<button data-ia="add">+ Toevoegen</button>' : '') + '</h4>' + l.map(m => {
       const chips = (m.role === 'admin' ? '<i class="chip acc">Admin</i>' : '') + (until(m.banned_until) ? '<i class="chip red">Verbannen ' + fmtUntil(m.banned_until) + '</i>' : '') + (until(m.muted_until) ? '<i class="chip org">Geblokkeerd ' + fmtUntil(m.muted_until) + '</i>' : '');
-      return '<div class="mem">' + avatar(m.user_id, 'sm', true) + '<div class="t"><b>' + esc(m.user_id === me.id ? nameOf(m.user_id) + ' (jij)' : nameOf(m.user_id)) + '</b><span>' + esc((profiles[m.user_id] || {}).email || '') + '</span>' + (chips ? '<div class="chips">' + chips + '</div>' : '') + '</div>' + (adm && m.user_id !== me.id ? '<button class="icon" data-mm="' + m.user_id + '" title="Beheren">&#8943;</button>' : (m.user_id !== me.id ? '<button class="icon" data-dm="' + m.user_id + '" title="Chatten">&#128172;</button>' : '')) + '</div>';
+      return '<div class="mem">' + avatar(m.user_id, 'sm', true) + '<div class="t"><b>' + esc(m.user_id === me.id ? nameOf(m.user_id) + ' (jij)' : nameOf(m.user_id)) + '</b><span>' + esc(handleOf(m.user_id)) + '</span>' + (chips ? '<div class="chips">' + chips + '</div>' : '') + '</div>' + (adm && m.user_id !== me.id ? '<button class="icon" data-mm="' + m.user_id + '" title="Beheren">&#8943;</button>' : (m.user_id !== me.id ? '<button class="icon" data-dm="' + m.user_id + '" title="Chatten">&#128172;</button>' : '')) + '</div>';
     }).join('') + '</div>';
     if (adm) h += '<div class="isec"><p style="font-size:13px;color:var(--muted);padding:0 4px">Als admin kun je leden <b>blokkeren</b> (ze kunnen dan niet appen), <b>verbannen</b> voor een bepaalde tijd of <b>eruit zetten</b>. Klik op &#8943; bij een lid.</p></div>';
     h += '<div class="isec"><button class="ibtn danger" data-ia="leave">&#8617; Groep verlaten</button>' + (adm ? '<button class="ibtn danger" data-ia="delete">&#128465; Groep verwijderen voor iedereen</button>' : '') + '</div>';
@@ -838,7 +897,7 @@ $('gmSearch').addEventListener('input', () => { clearTimeout(gmT); gmT = setTime
 async function listPicks() {
   const ppl = await searchPeople($('gmSearch').value.trim().toLowerCase(), 40), inGroup = groupMode === 'add' ? (members[cur] || []).map(m => m.user_id) : [];
   const l = ppl.filter(p => inGroup.indexOf(p.id) < 0);
-  $('gmList').innerHTML = l.length ? l.map(p => '<button type="button" class="res' + (picked.indexOf(p.id) >= 0 ? ' on' : '') + '" data-pk="' + p.id + '">' + avatar(p.id, 'sm') + '<div class="t"><b>' + esc(nameOf(p.id)) + '</b><span>' + esc(p.email) + '</span></div><span class="ck">&#10003;</span></button>').join('') : '<div class="none" style="padding:14px;text-align:center;color:var(--muted);font-size:14px">Niemand gevonden.</div>';
+  $('gmList').innerHTML = l.length ? l.map(p => '<button type="button" class="res' + (picked.indexOf(p.id) >= 0 ? ' on' : '') + '" data-pk="' + p.id + '">' + avatar(p.id, 'sm') + '<div class="t"><b>' + esc(nameOf(p.id)) + '</b><span>' + esc(handleOf(p.id)) + '</span></div><span class="ck">&#10003;</span></button>').join('') : '<div class="none" style="padding:14px;text-align:center;color:var(--muted);font-size:14px">Niemand gevonden.</div>';
 }
 $('gmList').addEventListener('click', e => { const b = e.target.closest('[data-pk]'); if (!b) return; const id = b.dataset.pk, i = picked.indexOf(id); if (i >= 0) picked.splice(i, 1); else picked.push(id); b.classList.toggle('on', i < 0); renderPicks(); });
 $('gmPicks').addEventListener('click', e => { const b = e.target.closest('[data-un]'); if (!b) return; picked = picked.filter(x => x !== b.dataset.un); renderPicks(); listPicks(); });
