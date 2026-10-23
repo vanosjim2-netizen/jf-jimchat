@@ -290,6 +290,7 @@ aside.info{background:var(--panel);border-left:1px solid var(--line);overflow-y:
       <button id="mRename">&#9998; Naam wijzigen</button>
       <button id="mPw">&#128273; Wachtwoord wijzigen</button>
       <button id="mNotif">&#128276; Meldingen aanzetten</button>
+      <button id="mSound"></button>
       <hr>
       <button id="mOut" class="danger">&#8617; Uitloggen</button>
     </div>
@@ -842,7 +843,7 @@ function startLive() {
       const m = p.new; if (!chat(m.chat_id)) { reloadSoon(); return; }
       await fetchProfiles([m.user_id]);
       if (typing[m.chat_id]) delete typing[m.chat_id][m.user_id];
-      if (m.user_id !== me.id && (m.chat_id !== cur || document.hidden)) { unread[m.chat_id] = (unread[m.chat_id] || 0) + 1; updateTitle(); notify(m); }
+      if (m.user_id !== me.id && (m.chat_id !== cur || document.hidden)) { unread[m.chat_id] = (unread[m.chat_id] || 0) + 1; updateTitle(); notify(m); if (m.kind !== 'system') ping(); }
       addMsg(m); if (m.kind === 'system') reloadSoon();
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, p => {
@@ -1009,6 +1010,12 @@ $('meBtn').onclick = () => $('menu').classList.toggle('hidden');
 $('mRename').onclick = async () => { $('menu').classList.add('hidden'); const n = prompt('Hoe wil je heten in jimchat?', nameOf(me.id)); if (n === null || !n.trim()) return; const name = n.trim().slice(0, 40); const { error } = await sb.from('profiles').update({ name }).eq('id', me.id); if (error) return toast(vertaal(error.message)); profiles[me.id].name = name; sb.auth.updateUser({ data: { name } }); renderMe(); toast('Naam gewijzigd'); };
 $('mPw').onclick = async () => { $('menu').classList.add('hidden'); const p = prompt('Nieuw wachtwoord (minstens 6 tekens):'); if (!p) return; if (p.length < 6) return alert('Kies een wachtwoord van minstens 6 tekens.'); const { error } = await sb.auth.updateUser({ password: p }); alert(error ? vertaal(error.message) : 'Je wachtwoord is gewijzigd.'); };
 $('mNotif').onclick = async () => { $('menu').classList.add('hidden'); const r = await Notification.requestPermission(); toast(r === 'granted' ? 'Meldingen staan aan' : 'Meldingen zijn niet toegestaan'); renderMe(); };
+let actx = null;
+const soundOn = () => localStorage.getItem('jimchat-sound') !== '0';
+function ping() { if (!soundOn()) return; try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const t = actx.currentTime; [[880, 0], [1320, .09]].forEach(([f, d]) => { const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.12, t + d + .01); g.gain.exponentialRampToValueAtTime(.001, t + d + .18); o.connect(g).connect(actx.destination); o.start(t + d); o.stop(t + d + .2); }); } catch (e) {} }
+function renderSound() { $('mSound').innerHTML = soundOn() ? '&#128266; Geluid uitzetten' : '&#128263; Geluid aanzetten'; }
+$('mSound').onclick = () => { localStorage.setItem('jimchat-sound', soundOn() ? '0' : '1'); renderSound(); if (soundOn()) ping(); toast(soundOn() ? 'Geluid staat aan' : 'Geluid staat uit'); };
+renderSound();
 $('mOut').onclick = async () => { $('menu').classList.add('hidden'); stopLive(); await sb.auth.signOut(); };
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { document.querySelectorAll('.mbg').forEach(m => m.classList.add('hidden')); closePop(); $('menu').classList.add('hidden'); }
